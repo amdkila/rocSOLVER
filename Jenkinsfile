@@ -40,17 +40,18 @@ rocSOLVERCI:
 
         String cmake = platform.jenkinsLabel.contains('centos') ? 'cmake3' : 'cmake'
         String compiler = platform.jenkinsLabel.contains('hip-clang') ? 'hipcc' : 'hcc'
-	project.paths.build_command = "sudo ${cmake} -DCMAKE_CXX_COMPILER=/opt/rocm/bin/${compiler} .."
+	    project.paths.build_command = "${cmake} -DCMAKE_CXX_COMPILER=/opt/rocm/bin/${compiler} .."
         
-        def getRocBLAS = auxiliary.getLibrary('rocBLAS',platform.jenkinsLabel,'develop',true)
+        String branch = platform.jenkinsLabel.contains('hip-clang') 'hip-clang' : 'develop'
+        def getRocBLAS = auxiliary.getLibrary('rocBLAS',platform.jenkinsLabel,branch,true)
         def command = """#!/usr/bin/env bash
                     set -x
                     cd ${project.paths.project_build_prefix}
                     ${getRocBLAS}
-                    sudo mkdir build && cd build
+                    mkdir build && cd build
                     export PATH=/opt/rocm/bin:$PATH
                     ${project.paths.build_command}
-                    sudo make -j32
+                    make -j32
                 """
 
         platform.runCommand(this, command)
@@ -63,7 +64,8 @@ rocSOLVERCI:
 
         try
         {
-            def getRocBLAS = auxiliary.getLibrary('rocBLAS',platform.jenkinsLabel,'develop',true)
+            String branch = platform.jenkinsLabel.contains('hip-clang') 'hip-clang' : 'develop'
+            def getRocBLAS = auxiliary.getLibrary('rocBLAS',platform.jenkinsLabel,branch,true)
             def command = """#!/usr/bin/env bash
                         set -x
                         cd ${project.paths.project_build_prefix}/build/clients/staging
@@ -82,8 +84,9 @@ rocSOLVERCI:
     def packageCommand =
     {
         platform, project->
-
-        def getRocBLAS = auxiliary.getLibrary('rocBLAS',platform.jenkinsLabel,'develop',true)
+        
+        String branch = platform.jenkinsLabel.contains('hip-clang') 'hip-clang' : 'develop'
+        def getRocBLAS = auxiliary.getLibrary('rocBLAS',platform.jenkinsLabel,branch,true)
         def packageHelper = platform.makePackage(platform.jenkinsLabel,"${project.paths.project_build_prefix}/build",false,true,getRocBLAS)  
 
         platform.runCommand(this, packageHelper[0])
@@ -92,4 +95,3 @@ rocSOLVERCI:
 
     buildProject(rocsolver, formatCheck, nodes.dockerArray, compileCommand, testCommand, packageCommand)
 }
-
